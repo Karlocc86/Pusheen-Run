@@ -66,6 +66,24 @@ public class PathGenerator : MonoBehaviour
     [Tooltip("Posición Y del trigger del evento (más arriba que los consumibles normales).")]
     public float triggerEventoY = 0f;
 
+    [Header("Chunks")]
+    [Tooltip("Prefabs de chunks completos que pueden aparecer ocasionalmente.")]
+    public GameObject[] chunkPrefabs;
+
+    [Tooltip("Probabilidad (0-1) de que un ciclo de spawn genere un chunk en vez de spawns individuales.")]
+    [Range(0f, 1f)]
+    public float chunkChance = 0.1f;
+
+    [Tooltip("Posición Y donde aparece el chunk; ajustar para que quede sobre el suelo.")]
+    public float chunkY = -2f;
+
+    [Tooltip("Unidades extra a la derecha del borde de cámara donde spawna el chunk. " +
+             "Ponlo igual o mayor al ancho del chunk para que entre completamente fuera de pantalla.")]
+    public float chunkSpawnOffsetExtra = 55f;
+
+    // true mientras hay un chunk activo en pantalla; evita que se solapen dos chunks
+    private bool _chunkActivo = false;
+
     [Header("Timing y posición")]
     // cada cuantos segundos se intenta generar algo nuevo en pantalla (valor inicial)
     [Tooltip("Intervalo inicial entre cada intento de spawn.")]
@@ -155,10 +173,15 @@ public class PathGenerator : MonoBehaviour
                 GameManager.Instance.CurrentState == GameManager.GameState.Playing)
             {
                 UpdateDifficulty();
-                TrySpawnObstacle();
-                // si spawneó la caja evento ese ciclo, no spawneamos postre (y viceversa)
-                if (!TrySpawnTriggerEvento())
-                    TrySpawnConsumible();
+                // mientras haya un chunk activo en pantalla no se spawnea nada individual
+                // TrySpawnChunk() también retorna true el tick que acaba de spawnear uno
+                if (!_chunkActivo && !TrySpawnChunk())
+                {
+                    TrySpawnObstacle();
+                    // si spawneó la caja evento ese ciclo, no spawneamos postre (y viceversa)
+                    if (!TrySpawnTriggerEvento())
+                        TrySpawnConsumible();
+                }
             }
 
             // yield return = "espera esto y luego sigue desde aqui la proxima iteracion"
@@ -265,6 +288,36 @@ public class PathGenerator : MonoBehaviour
         Vector3 spawnPos = new(GetSpawnX(), triggerEventoY, 0f);
         Instantiate(triggerEventoPrefab, spawnPos, Quaternion.identity, transform);
         return true;
+    }
+
+    // intenta spawnear un chunk; retorna true si lo hizo (para bloquear spawns individuales ese tick)
+    // no spawna si ya hay un chunk activo, durante el evento, o si no pasa la probabilidad
+    private bool TrySpawnChunk()
+    {
+        if (chunkPrefabs == null || chunkPrefabs.Length == 0) return false;
+        if (_chunkActivo) return false;
+        if (GameManager.Instance != null && GameManager.Instance.EventoActivo) return false;
+        if (Random.value > chunkChance) return false;
+
+        int index = Random.Range(0, chunkPrefabs.Length);
+
+        Vector3 spawnPos = new Vector3(GetSpawnX() + chunkSpawnOffsetExtra, chunkY, 0f);
+        // sin padre: CleanupCoroutine destruye hijos por pivote X y mataría el chunk a la mitad
+        // ChunkController se encarga de destruirse solo cuando sale completamente de pantalla
+        GameObject chunk = Instantiate(chunkPrefabs[index], spawnPos, Quaternion.identity);
+
+        // ChunkController se encarga de moverlo y de avisar cuando salga de pantalla
+        if (!chunk.TryGetComponent<ChunkController>(out _))
+            chunk.AddComponent<ChunkController>();
+
+        _chunkActivo = true;
+        return true;
+    }
+
+    // lo llama ChunkController cuando el chunk sale completamente de pantalla
+    public void OnChunkSalido()
+    {
+        _chunkActivo = false;
     }
 
     // corrutina paralela que corre mientras EventoActivo == true
