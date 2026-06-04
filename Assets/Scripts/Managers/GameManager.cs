@@ -9,9 +9,12 @@ public class GameManager : MonoBehaviour
     // es como una variable global pero mas ordenada pues
     public static GameManager Instance { get; private set; }
 
-    // los tres estados posibles del juego, como una maquinita de estados
-    public enum GameState { Menu, Playing, GameOver }
+    // estados posibles del juego
+    public enum GameState { Menu, Playing, GameOver, Paused }
     public GameState CurrentState { get; private set; }
+
+    // recuerda en qué estado estaba el juego antes de pausar para volver a él al reanudar
+    private GameState estadoAntesDePausa;
 
     // true mientras esta corriendo el evento LluviaDeBurguesas
     // PathGenerator lo consulta para suspender obstaculos y spawnear solo hamburguesas
@@ -35,6 +38,7 @@ public class GameManager : MonoBehaviour
     {
         // el juego arranca en Menu; StartGame() lo cambia a Playing cuando el jugador le da jugar
         CurrentState = GameState.Menu;
+        AudioManager.Instance?.PlayMenu();
     }
 
     void Update()
@@ -46,7 +50,8 @@ public class GameManager : MonoBehaviour
     public void StartGame()
     {
         CurrentState = GameState.Playing;
-        Time.timeScale = 1f; // timeScale 0 = todo pausado, 1 = velocidad normal
+        Time.timeScale = 1f;
+        AudioManager.Instance?.PlayIngame();
     }
 
     // esto se llama cuando Pusheen choca con un obstaculo; para el juego y muestra el game over
@@ -55,12 +60,35 @@ public class GameManager : MonoBehaviour
         // evita llamarlo dos veces seguidas por si dos cosas colisionan al mismo tiempo
         if (CurrentState == GameState.GameOver) return;
         CurrentState = GameState.GameOver;
-        EventoActivo = false; // limpia el evento si el jugador muere durante la lluvia
-        Time.timeScale = 0f; // pausa todo el juego congelando el tiempo
-        // le dice al UIManager que muestre la pantalla de game over
-        // el ? es para que no truene si por alguna razon no hay UIManager en escena
+        EventoActivo = false;
+        Time.timeScale = 0f;
         UIManager.Instance?.MostrarGameOver();
+        // PlayGameOver para el sonido de derrota; PlayPlayAgain espera y luego hace fade in del loop
+        AudioManager.Instance?.PlayGameOver();
+        AudioManager.Instance?.PlayPlayAgain();
         Debug.Log("Game Over");
+    }
+
+    // pausa el juego: congela el tiempo, muestra el panel de pausa y baja el volumen
+    // solo funciona si el estado actual es Playing
+    public void PauseGame()
+    {
+        if (CurrentState != GameState.Playing) return;
+        estadoAntesDePausa = CurrentState;
+        CurrentState = GameState.Paused;
+        Time.timeScale = 0f;
+        UIManager.Instance?.MostrarPausa();
+        AudioManager.Instance?.DuckMusica();
+    }
+
+    // reanuda el juego: restaura el tiempo, oculta el panel de pausa y sube el volumen
+    public void ResumeGame()
+    {
+        if (CurrentState != GameState.Paused) return;
+        CurrentState = estadoAntesDePausa;
+        Time.timeScale = 1f;
+        UIManager.Instance?.OcultarPausa();
+        AudioManager.Instance?.RestaurarMusica();
     }
 
     // activa el evento LluviaDeBurguesas por 'duracion' segundos

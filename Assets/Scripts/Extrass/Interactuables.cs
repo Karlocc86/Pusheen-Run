@@ -52,6 +52,11 @@ public class Interactuables : MonoBehaviour
             Destroy(gameObject);
             print("Pusheen se comio un tiramisu"); // Cam hazme uno xfi
         }
+        else if (gameObject.CompareTag("Burger"))
+        {
+            ScoreManager.Instance.AddPoints(25f);
+            Destroy(gameObject);
+        }
         else if (gameObject.CompareTag("Obstaculo"))
         {
             // era un obstaculo, game over pues

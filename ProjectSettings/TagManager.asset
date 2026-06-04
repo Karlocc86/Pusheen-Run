@@ -9,6 +9,7 @@ TagManager:
   - Obstaculo
   - Consumible
   - Postre
+  - Burger
   layers:
   - Default
   - TransparentFX

@@ -17,6 +17,12 @@ public class UIManager : MonoBehaviour
     [Tooltip("Panel o texto que se activa al perder.")]
     public GameObject textoGameOver;
 
+    [Tooltip("Panel de pausa que cubre la pantalla; contiene el botón de reanudar.")]
+    public GameObject panelPausa;
+
+    [Tooltip("Botón de pausa visible solo durante Playing (esquina superior).")]
+    public GameObject botonPausa;
+
     // TMP_Text es TextMeshPro, mas bonito y flexible que el Text normal de Unity
     [Tooltip("Texto TMP donde se muestra el score en tiempo real.")]
     public TMP_Text textoScore;
@@ -44,6 +50,8 @@ public class UIManager : MonoBehaviour
     {
         textoGameOver.SetActive(false);
         panelMenu.SetActive(true);
+        if (panelPausa != null) panelPausa.SetActive(false);
+        if (botonPausa != null) botonPausa.SetActive(false);
         Time.timeScale = 0f;
 
         // fallback directo desde PlayerPrefs por si ScoreManager aun no esta listo
@@ -53,13 +61,17 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
-        if (ScoreManager.Instance == null || GameManager.Instance == null) return;
+        if (GameManager.Instance == null) return;
 
         var estado = GameManager.Instance.CurrentState;
-        string bestText = "Best: " + ScoreManager.Instance.Highscore;
 
-        // actualizamos ambos textos de highscore sin importar el estado
-        // asi funciona aunque el usuario haya asignado solo uno de los dos en el Inspector
+        // el botón de pausa solo se muestra mientras el juego está activo
+        if (botonPausa != null)
+            botonPausa.SetActive(estado == GameManager.GameState.Playing);
+
+        if (ScoreManager.Instance == null) return;
+
+        string bestText = "Best: " + ScoreManager.Instance.Highscore;
         if (textoHighscore != null) textoHighscore.text = bestText;
         if (textoHighscoreMenu != null) textoHighscoreMenu.text = bestText;
 
@@ -93,6 +105,30 @@ public class UIManager : MonoBehaviour
     public void MostrarGameOver()
     {
         textoGameOver.SetActive(true);
+    }
+
+    // muestra el panel de pausa; lo llama GameManager.PauseGame()
+    public void MostrarPausa()
+    {
+        if (panelPausa != null) panelPausa.SetActive(true);
+    }
+
+    // oculta el panel de pausa; lo llama GameManager.ResumeGame()
+    public void OcultarPausa()
+    {
+        if (panelPausa != null) panelPausa.SetActive(false);
+    }
+
+    // enlaza al botón "||" visible durante el juego
+    public void PausarJuego()
+    {
+        GameManager.Instance?.PauseGame();
+    }
+
+    // enlaza al botón "Reanudar" dentro del panelPausa
+    public void ReanudarJuego()
+    {
+        GameManager.Instance?.ResumeGame();
     }
 
     // este metodo va en el boton "Reiniciar" del panel de game over
