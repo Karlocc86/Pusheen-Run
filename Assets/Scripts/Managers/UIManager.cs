@@ -45,11 +45,15 @@ public class UIManager : MonoBehaviour
         textoGameOver.SetActive(false);
         panelMenu.SetActive(true);
         Time.timeScale = 0f;
+
+        // fallback directo desde PlayerPrefs por si ScoreManager aun no esta listo
+        if (textoHighscoreMenu != null)
+            textoHighscoreMenu.text = "Best: " + PlayerPrefs.GetInt("Highscore", 0);
     }
 
     void Update()
     {
-        if (ScoreManager.Instance == null) return;
+        if (ScoreManager.Instance == null || GameManager.Instance == null) return;
 
         var estado = GameManager.Instance.CurrentState;
 

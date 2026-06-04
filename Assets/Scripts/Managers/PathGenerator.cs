@@ -113,6 +113,8 @@ public class PathGenerator : MonoBehaviour
     private float _currentInterval;
     private float _currentObstacleChance;
     private float _tiempoUltimoObstaculo = -999f; // tiempo real del ultimo obstaculo spawneado
+    private float _tiempoUltimaCaja = -999f;       // cooldown de 20s entre cajas evento
+    private int _ultimoMilestone = 0;              // ultimo multiplo de 1000 que spawneo una caja
 
     private void Awake()
     {
@@ -236,14 +238,31 @@ public class PathGenerator : MonoBehaviour
         Instantiate(consumiblePrefabs[index], spawnPos, Quaternion.identity, transform);
     }
 
-    // intenta spawnear el trigger del evento; retorna true si spawneó algo (para excluir consumibles ese ciclo)
+    // intenta spawnear la caja evento; retorna true si spawneó (para excluir consumibles ese ciclo)
+    // reglas: solo despues de 1200 pts, cooldown 20s, spawn forzado cada 1000 pts de milestone
     private bool TrySpawnTriggerEvento()
     {
         if (triggerEventoPrefab == null) return false;
         if (GameManager.Instance != null && GameManager.Instance.EventoActivo) return false;
-        if (Random.value > triggerEventoChance) return false;
 
-        Vector3 spawnPos = new Vector3(GetSpawnX(), triggerEventoY, 0f);
+        float score = ScoreManager.Instance != null ? ScoreManager.Instance.Score : 0f;
+
+        // no aparece antes de los 1200 puntos
+        if (score < 1200f) return false;
+
+        // cooldown de 20 segundos desde la ultima caja
+        if (Time.realtimeSinceStartup - _tiempoUltimaCaja < 20f) return false;
+
+        // milestone forzado: cada multiplo de 1000 puntos debe salir una caja
+        int milestoneActual = Mathf.FloorToInt(score / 1000f);
+        bool esMilestone = milestoneActual > _ultimoMilestone;
+
+        // si no es milestone, tira el dado normal (5% por ciclo)
+        if (!esMilestone && Random.value > triggerEventoChance) return false;
+
+        _ultimoMilestone = milestoneActual;
+        _tiempoUltimaCaja = Time.realtimeSinceStartup;
+        Vector3 spawnPos = new(GetSpawnX(), triggerEventoY, 0f);
         Instantiate(triggerEventoPrefab, spawnPos, Quaternion.identity, transform);
         return true;
     }
