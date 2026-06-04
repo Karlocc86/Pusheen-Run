@@ -42,35 +42,32 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
-        // esconde el game over al inicio para que no este ahi desde el principio
         textoGameOver.SetActive(false);
-
-        // muestra el menu y pausa el juego hasta que el jugador le de a jugar
         panelMenu.SetActive(true);
         Time.timeScale = 0f;
-
-        // muestra el highscore en el menu
-        if (textoHighscoreMenu != null && ScoreManager.Instance != null)
-            textoHighscoreMenu.text = "Best: " + ScoreManager.Instance.Highscore;
     }
 
     void Update()
     {
-        // actualiza el texto de score cada frame para que se vea en tiempo real
-        // el (int) convierte el float a entero para que no muestre decimales feos tipo 123.456789
+        if (ScoreManager.Instance == null) return;
+
+        var estado = GameManager.Instance.CurrentState;
+
+        // highscore en el menu: se actualiza cada frame por si acaba de cargar despues del play again
+        if (textoHighscoreMenu != null && estado == GameManager.GameState.Menu)
+            textoHighscoreMenu.text = "Best: " + ScoreManager.Instance.Highscore;
+
+        if (estado != GameManager.GameState.Playing) return;
+
+        // score y highscore durante el juego
         if (textoScore != null)
             textoScore.text = "Score: " + (int)ScoreManager.Instance.Score;
 
-        // actualiza el highscore (maximo historico)
         if (textoHighscore != null)
-            textoHighscore.text = "High Score: " + ScoreManager.Instance.Highscore;
+            textoHighscore.text = "Best: " + ScoreManager.Instance.Highscore;
 
-        // muestra el nivel de dificultad basado en el score
-        if (textoDificultad != null && GameManager.Instance.CurrentState == GameManager.GameState.Playing)
-        {
-            string dificultad = ObtenerNivelDificultad(ScoreManager.Instance.Score);
-            textoDificultad.text = "Difficulty: " + dificultad;
-        }
+        if (textoDificultad != null)
+            textoDificultad.text = ObtenerNivelDificultad(ScoreManager.Instance.Score);
     }
 
     // retorna el nivel de dificultad segun el score actual

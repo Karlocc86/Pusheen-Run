@@ -8,9 +8,9 @@ public class Pusheen : MonoBehaviour
     private Rigidbody2D _rb;
     private SpriteRenderer _spriteRenderer;
 
-    [SerializeField] private float _fuerzaSalto = 20f; // 200% del valor original
+    private float _fuerzaSalto = 13.5f;
     [SerializeField] private float _maxVelocidad = 15f; // limita velocidad de caida
-    [SerializeField] private float _dragFactor = 0.5f; // hace la caida mas suave
+    [SerializeField] private float _dragFactor = 0.5f; // usar para q caiga mas rapido
 
     private bool _laObesaEstaEnElSuelo = true;
     private Color _colorOriginal;
@@ -34,12 +34,14 @@ public class Pusheen : MonoBehaviour
 
     void OnEnable()
     {
+        // _inputActions se inicializa en Awake; si OnEnable llega primero lo creamos aqui
+        _inputActions ??= new InputSystem_Actions();
         _inputActions.Enable();
     }
 
     void OnDisable()
     {
-        _inputActions.Disable();
+        _inputActions?.Disable();
     }
 
     // Update is called once per frame
@@ -72,7 +74,7 @@ public class Pusheen : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         // Cuando toca el suelo ya puede volver a saltar
-        if (collision.gameObject.CompareTag("Suelo") || collision.gameObject.CompareTag("Plataforma"))
+        if (collision.gameObject.CompareTag("Suelo"))
         {
             _laObesaEstaEnElSuelo = true;
         }

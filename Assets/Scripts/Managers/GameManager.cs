@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 // este es el manager mas importante pues, controla el estado del juego
 // menu, jugando o game over; todos los demas scripts lo consultan para saber que hacer
@@ -11,6 +12,10 @@ public class GameManager : MonoBehaviour
     // los tres estados posibles del juego, como una maquinita de estados
     public enum GameState { Menu, Playing, GameOver }
     public GameState CurrentState { get; private set; }
+
+    // true mientras esta corriendo el evento LluviaDeBurguesas
+    // PathGenerator lo consulta para suspender obstaculos y spawnear solo hamburguesas
+    public bool EventoActivo { get; private set; }
 
     // Awake se llama antes que Start, por eso ponemos el singleton aqui
     // asi otros scripts pueden usarlo desde su propio Start sin problemas de orden
@@ -50,10 +55,27 @@ public class GameManager : MonoBehaviour
         // evita llamarlo dos veces seguidas por si dos cosas colisionan al mismo tiempo
         if (CurrentState == GameState.GameOver) return;
         CurrentState = GameState.GameOver;
+        EventoActivo = false; // limpia el evento si el jugador muere durante la lluvia
         Time.timeScale = 0f; // pausa todo el juego congelando el tiempo
         // le dice al UIManager que muestre la pantalla de game over
         // el ? es para que no truene si por alguna razon no hay UIManager en escena
         UIManager.Instance?.MostrarGameOver();
         Debug.Log("Game Over");
+    }
+
+    // activa el evento LluviaDeBurguesas por 'duracion' segundos
+    // si ya hay un evento activo lo ignora para no apilarlos
+    public IEnumerator ActivarLluviaBurguesas(float duracion = 10f)
+    {
+        if (EventoActivo) yield break;
+
+        EventoActivo = true;
+        Debug.Log("Evento: LluviaDeBurguesas iniciado por " + duracion + "s");
+
+        // WaitForSecondsRealtime para que funcione aunque timeScale cambie
+        yield return new WaitForSecondsRealtime(duracion);
+
+        EventoActivo = false;
+        Debug.Log("Evento: LluviaDeBurguesas terminado");
     }
 }
