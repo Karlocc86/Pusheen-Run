@@ -49,14 +49,24 @@ public class UIManager : MonoBehaviour
     void Start()
     {
         textoGameOver.SetActive(false);
-        panelMenu.SetActive(true);
         if (panelPausa != null) panelPausa.SetActive(false);
         if (botonPausa != null) botonPausa.SetActive(false);
-        Time.timeScale = 0f;
 
-        // fallback directo desde PlayerPrefs por si ScoreManager aun no esta listo
         if (textoHighscoreMenu != null)
             textoHighscoreMenu.text = "Best: " + PlayerPrefs.GetInt("Highscore", 0);
+
+        // GameManager.Awake() ya resolvió el estado antes de que este Start() corra
+        // si es Playing viene de Play Again: ocultamos menú y no tocamos timeScale
+        // si es Menu: mostramos menú y congelamos el tiempo como siempre
+        if (GameManager.Instance.CurrentState == GameManager.GameState.Playing)
+        {
+            panelMenu.SetActive(false);
+        }
+        else
+        {
+            panelMenu.SetActive(true);
+            Time.timeScale = 0f;
+        }
     }
 
     void Update()
@@ -132,9 +142,10 @@ public class UIManager : MonoBehaviour
     }
 
     // este metodo va en el boton "Reiniciar" del panel de game over
-    // cargar la misma escena de nuevo es la forma mas facil de resetear todo el juego
+    // activa la flag para saltar el menú y luego recarga la escena
     public void Reiniciar()
     {
+        GameManager.SaltarMenuAlCargar = true;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

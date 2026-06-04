@@ -20,6 +20,9 @@ public class AudioManager : MonoBehaviour
     [Tooltip("AudioSource con el sonido/jingle de derrota (sin loop).")]
     public AudioSource sonidoDerrota;
 
+    [Tooltip("AudioSource con el sonido de colectar un ítem (postre, burger). Sin loop.")]
+    public AudioSource sonidoColectar;
+
     [Header("Configuración de transiciones")]
     [Tooltip("Segundos que tarda cada fade in o fade out.")]
     public float tiempoFade = 1f;
@@ -59,11 +62,13 @@ public class AudioManager : MonoBehaviour
         StartCoroutine(FadeIn(musicaMenu, volMenu));
     }
 
-    // hace cross-fade de menú a ingame
+    // hace cross-fade a ingame parando todo lo que pudiera estar sonando antes
     public void PlayIngame()
     {
         StopAllCoroutines();
+        if (sonidoDerrota != null) sonidoDerrota.Stop();
         StartCoroutine(FadeOut(musicaMenu));
+        StartCoroutine(FadeOut(musicaPlayAgain));
         StartCoroutine(FadeIn(musicaIngame, volIngame));
     }
 
@@ -83,6 +88,13 @@ public class AudioManager : MonoBehaviour
         StartCoroutine(EsperarYPlayPlayAgain());
     }
 
+    // reproduce el sonido de colectar; usa PlayOneShot para que se solape si se recogen varios rápido
+    public void PlayColectar()
+    {
+        if (sonidoColectar == null || sonidoColectar.clip == null) return;
+        sonidoColectar.PlayOneShot(sonidoColectar.clip);
+    }
+
     // para todo sin fade (útil para resets de escena o situaciones de emergencia)
     public void StopAll()
     {
@@ -91,8 +103,10 @@ public class AudioManager : MonoBehaviour
     }
 
     // baja el volumen de la música ingame al porcentaje configurado (se llama al pausar)
+    // para el sonido de derrota por si quedó activo antes de pausar
     public void DuckMusica()
     {
+        if (sonidoDerrota != null && sonidoDerrota.isPlaying) sonidoDerrota.Stop();
         if (musicaIngame == null || !musicaIngame.isPlaying) return;
         StopAllCoroutines();
         StartCoroutine(FadeTo(musicaIngame, volIngame * volumenDuck, tiempoFade * 0.5f));

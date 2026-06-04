@@ -81,8 +81,14 @@ public class PathGenerator : MonoBehaviour
              "Ponlo igual o mayor al ancho del chunk para que entre completamente fuera de pantalla.")]
     public float chunkSpawnOffsetExtra = 55f;
 
+    [Tooltip("Segundos de espera tras salir un chunk antes de reanudar spawns y permitir otro chunk.")]
+    public float chunkCooldown = 15f;
+
     // true mientras hay un chunk activo en pantalla; evita que se solapen dos chunks
     private bool _chunkActivo = false;
+
+    // momento en que el último chunk salió de pantalla; usado para el cooldown de 15s
+    private float _tiempoUltimoChunkSalio = -999f;
 
     [Header("Timing y posición")]
     // cada cuantos segundos se intenta generar algo nuevo en pantalla (valor inicial)
@@ -173,9 +179,8 @@ public class PathGenerator : MonoBehaviour
                 GameManager.Instance.CurrentState == GameManager.GameState.Playing)
             {
                 UpdateDifficulty();
-                // mientras haya un chunk activo en pantalla no se spawnea nada individual
-                // TrySpawnChunk() también retorna true el tick que acaba de spawnear uno
-                if (!_chunkActivo && !TrySpawnChunk())
+                // bloquea todo mientras el chunk está en pantalla O durante el cooldown post-chunk
+                if (!_chunkActivo && !EnCooldownDeChunk() && !TrySpawnChunk())
                 {
                     TrySpawnObstacle();
                     // si spawneó la caja evento ese ciclo, no spawneamos postre (y viceversa)
@@ -218,12 +223,9 @@ public class PathGenerator : MonoBehaviour
     }
 
     // tira los dados y si pasan la probabilidad instancia un obstaculo aleatorio del array
-    // durante el evento LluviaDeBurguesas no spawna nada para que el jugador pueda agarrar hamburguesas libremente
     private void TrySpawnObstacle()
     {
         if (obstaclePrefabs == null || obstaclePrefabs.Length == 0) return;
-        // durante el evento no hay obstaculos; es el momento de disfrutar las hamburguesas
-        if (GameManager.Instance != null && GameManager.Instance.EventoActivo) return;
         // garantiza un gap minimo de reaccion entre obstaculos sin importar la dificultad
         if (Time.realtimeSinceStartup - _tiempoUltimoObstaculo < minGapBetweenObstacles) return;
         // no spawnea si ya hay demasiados obstaculos en pantalla
@@ -248,11 +250,9 @@ public class PathGenerator : MonoBehaviour
         return count;
     }
 
-    // igual que TrySpawnObstacle pero para postres; durante el evento la lluvia la maneja LluviaCoroutine
+    // igual que TrySpawnObstacle pero para postres
     private void TrySpawnConsumible()
     {
-        // durante el evento LluviaCoroutine se encarga; no duplicamos spawns aqui
-        if (GameManager.Instance != null && GameManager.Instance.EventoActivo) return;
         if (consumiblePrefabs == null || consumiblePrefabs.Length == 0) return;
         if (Random.value > consumibleChance) return;
 
@@ -315,9 +315,17 @@ public class PathGenerator : MonoBehaviour
     }
 
     // lo llama ChunkController cuando el chunk sale completamente de pantalla
+    // arranca el cooldown desde este momento para que los spawns no reanuden inmediatamente
     public void OnChunkSalido()
     {
         _chunkActivo = false;
+        _tiempoUltimoChunkSalio = Time.realtimeSinceStartup;
+    }
+
+    // true durante los segundos de cooldown tras salir el último chunk
+    private bool EnCooldownDeChunk()
+    {
+        return Time.realtimeSinceStartup - _tiempoUltimoChunkSalio < chunkCooldown;
     }
 
     // corrutina paralela que corre mientras EventoActivo == true

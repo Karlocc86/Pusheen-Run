@@ -13,6 +13,9 @@ public class GameManager : MonoBehaviour
     public enum GameState { Menu, Playing, GameOver, Paused }
     public GameState CurrentState { get; private set; }
 
+    // static sobrevive la recarga de escena; UIManager lo lee en Start para saltar el menú
+    public static bool SaltarMenuAlCargar = false;
+
     // recuerda en qué estado estaba el juego antes de pausar para volver a él al reanudar
     private GameState estadoAntesDePausa;
 
@@ -24,21 +27,34 @@ public class GameManager : MonoBehaviour
     // asi otros scripts pueden usarlo desde su propio Start sin problemas de orden
     private void Awake()
     {
-        // si ya hay una instancia de GameManager en escena destruye este duplicado
-        // puede pasar si cargas la escena dos veces o si tienes DontDestroyOnLoad
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
         Instance = this;
+
+        // Awake corre antes que cualquier Start(), así UIManager ya lee el estado correcto
+        // si viene de un Play Again arrancamos directo en Playing sin pasar por menú
+        if (SaltarMenuAlCargar)
+        {
+            SaltarMenuAlCargar = false;
+            CurrentState = GameState.Playing;
+            Time.timeScale = 1f;
+        }
+        else
+        {
+            CurrentState = GameState.Menu;
+        }
     }
 
     void Start()
     {
-        // el juego arranca en Menu; StartGame() lo cambia a Playing cuando el jugador le da jugar
-        CurrentState = GameState.Menu;
-        AudioManager.Instance?.PlayMenu();
+        // el audio se inicializa aquí porque AudioManager.Awake() corre en paralelo al nuestro
+        if (CurrentState == GameState.Playing)
+            AudioManager.Instance?.PlayIngame();
+        else
+            AudioManager.Instance?.PlayMenu();
     }
 
     void Update()
