@@ -20,9 +20,6 @@ public class MenuManager : MonoBehaviour
             return;
         }
         Instance = this;
-        // DontDestroyOnLoad hace que este objeto sobreviva si cargas otra escena
-        // util para managers que necesitan persistir entre escenas
-        DontDestroyOnLoad(gameObject);
     }
 
     // activa el panel y pausa el juego mientras el jugador decide si quiere jugar
