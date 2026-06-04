@@ -8,6 +8,8 @@ public class Movimiento : MonoBehaviour
     // que tan rapido va el objeto hacia la izquierda, ajustalo en el inspector segun el obstaculo
     [SerializeField] private float _velocidad = 5f;
 
+    private float _velocidadBurger = 5.3f;
+
     // si el objeto llega a esta distancia negativa en X pues ya se destruye, ya se fue de pantalla
     [Tooltip("Distancia negativa en X a partir de la cual el objeto se destruye.")]
     [SerializeField] private float _longitud = 50f;
@@ -26,7 +28,14 @@ public class Movimiento : MonoBehaviour
         // Vector3.left es lo mismo que (-1, 0, 0), o sea hacia la izquierda
         // Space.World es para moverse en coordenadas del mundo y no relativas al objeto
         // Time.deltaTime lo multiplicamos para que la velocidad sea igual sin importar los fps
-        transform.Translate(Vector3.left * _velocidad * Time.deltaTime, Space.World);
+        if (gameObject.CompareTag("Burger"))
+        {
+            transform.Translate(Vector3.left * _velocidadBurger * Time.deltaTime, Space.World);
+        }
+        else
+        {
+            transform.Translate(Vector3.left * _velocidad * Time.deltaTime, Space.World);
+        }
 
         // si ya paso la pantalla pues adios objeto, liberamos memoria
         if (transform.position.x < -_longitud)

@@ -56,19 +56,17 @@ public class UIManager : MonoBehaviour
         if (ScoreManager.Instance == null || GameManager.Instance == null) return;
 
         var estado = GameManager.Instance.CurrentState;
+        string bestText = "Best: " + ScoreManager.Instance.Highscore;
 
-        // highscore en el menu: se actualiza cada frame por si acaba de cargar despues del play again
-        if (textoHighscoreMenu != null && estado == GameManager.GameState.Menu)
-            textoHighscoreMenu.text = "Best: " + ScoreManager.Instance.Highscore;
+        // actualizamos ambos textos de highscore sin importar el estado
+        // asi funciona aunque el usuario haya asignado solo uno de los dos en el Inspector
+        if (textoHighscore != null) textoHighscore.text = bestText;
+        if (textoHighscoreMenu != null) textoHighscoreMenu.text = bestText;
 
         if (estado != GameManager.GameState.Playing) return;
 
-        // score y highscore durante el juego
         if (textoScore != null)
             textoScore.text = "Score: " + (int)ScoreManager.Instance.Score;
-
-        if (textoHighscore != null)
-            textoHighscore.text = "Best: " + ScoreManager.Instance.Highscore;
 
         if (textoDificultad != null)
             textoDificultad.text = ObtenerNivelDificultad(ScoreManager.Instance.Score);

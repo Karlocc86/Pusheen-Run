@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 9043975870185835389}
   m_Layer: 0
   m_Name: Hamburgesa
-  m_TagString: Postre
+  m_TagString: Burger
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -144,7 +144,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Interactuables
   sprites:
   - {fileID: 21300000, guid: 43d65624da31f8844a48b18cf9f01211, type: 3}
-  tamanoObjetivo: 3
+  tamanoObjetivo: 2.5
 --- !u!114 &9043975870185835389
 MonoBehaviour:
   m_ObjectHideFlags: 0
