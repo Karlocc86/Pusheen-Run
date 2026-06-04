@@ -79,9 +79,10 @@ public class ScoreManager : MonoBehaviour
         }
     }
 
-    // guarda el highscore en JSON en la carpeta de datos del juego
+    // guarda el highscore en JSON; solo en plataformas con sistema de archivos (no WebGL)
     private void SaveHighscoreToJSON(int highscore)
     {
+#if !UNITY_WEBGL
         try
         {
             string savePath = Path.Combine(Application.persistentDataPath, SaveFileName);
@@ -97,6 +98,7 @@ public class ScoreManager : MonoBehaviour
         {
             Debug.LogWarning($"No se pudo guardar JSON: {e.Message}");
         }
+#endif
     }
 
     // resetea el score a cero; llamalo al iniciar una nueva partida

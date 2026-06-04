@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using System.Collections;
 
 // este es el manager mas importante pues, controla el estado del juego
@@ -59,7 +60,21 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
+        if (Keyboard.current == null) return;
 
+        // Escape alterna entre pausar y reanudar durante la partida
+        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            if (CurrentState == GameState.Playing) PauseGame();
+            else if (CurrentState == GameState.Paused) ResumeGame();
+        }
+
+        // R reinicia desde game over o desde pausa
+        if (Keyboard.current.rKey.wasPressedThisFrame)
+        {
+            if (CurrentState == GameState.GameOver || CurrentState == GameState.Paused)
+                UIManager.Instance?.Reiniciar();
+        }
     }
 
     // cambia el estado a Playing y reactiva el tiempo (que estaba en 0 mientras el menu estaba abierto)
