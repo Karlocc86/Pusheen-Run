@@ -21,6 +21,15 @@ public class UIManager : MonoBehaviour
     [Tooltip("Texto TMP donde se muestra el score en tiempo real.")]
     public TMP_Text textoScore;
 
+    [Tooltip("Texto TMP donde se muestra el highscore (máximo histórico).")]
+    public TMP_Text textoHighscore;
+
+    [Tooltip("Texto para mostrar el highscore en el menú.")]
+    public TMP_Text textoHighscoreMenu;
+
+    [Tooltip("Texto para mostrar el nivel de dificultad durante el juego.")]
+    public TMP_Text textoDificultad;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -39,6 +48,10 @@ public class UIManager : MonoBehaviour
         // muestra el menu y pausa el juego hasta que el jugador le de a jugar
         panelMenu.SetActive(true);
         Time.timeScale = 0f;
+
+        // muestra el highscore en el menu
+        if (textoHighscoreMenu != null && ScoreManager.Instance != null)
+            textoHighscoreMenu.text = "Best: " + ScoreManager.Instance.Highscore;
     }
 
     void Update()
@@ -47,6 +60,27 @@ public class UIManager : MonoBehaviour
         // el (int) convierte el float a entero para que no muestre decimales feos tipo 123.456789
         if (textoScore != null)
             textoScore.text = "Score: " + (int)ScoreManager.Instance.Score;
+
+        // actualiza el highscore (maximo historico)
+        if (textoHighscore != null)
+            textoHighscore.text = "High Score: " + ScoreManager.Instance.Highscore;
+
+        // muestra el nivel de dificultad basado en el score
+        if (textoDificultad != null && GameManager.Instance.CurrentState == GameManager.GameState.Playing)
+        {
+            string dificultad = ObtenerNivelDificultad(ScoreManager.Instance.Score);
+            textoDificultad.text = "Difficulty: " + dificultad;
+        }
+    }
+
+    // retorna el nivel de dificultad segun el score actual
+    private string ObtenerNivelDificultad(float score)
+    {
+        if (score < 50) return "Easy";
+        if (score < 150) return "Medium";
+        if (score < 300) return "Hard";
+        if (score < 500) return "Very Hard";
+        return "INSANE";
     }
 
     // este metodo lo llama el boton "Jugar" del menu; oculta el menu y arranca el juego
