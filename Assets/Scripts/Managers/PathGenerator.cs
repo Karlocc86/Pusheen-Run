@@ -37,13 +37,31 @@ public class PathGenerator : MonoBehaviour
     public float consumibleY = -1.5f;
 
     [Header("Timing y posición")]
-    // cada cuantos segundos se intenta generar algo nuevo en pantalla
-    [Tooltip("Segundos entre cada intento de spawn.")]
+    // cada cuantos segundos se intenta generar algo nuevo en pantalla (valor inicial)
+    [Tooltip("Intervalo inicial entre cada intento de spawn.")]
     public float spawnInterval = 1.5f;
 
     // los objetos aparecen un poco mas alla del borde derecho para que no se vean aparecer de golpe
     [Tooltip("Distancia extra a la derecha del borde visible de la cámara donde aparecen los objetos.")]
     public float spawnOffsetX = 2f;
+
+    [Header("Dificultad progresiva")]
+    // score a partir del cual empieza la escalada de dificultad
+    [Tooltip("Score a partir del cual empieza a escalar la dificultad.")]
+    public float difficultyStartScore = 50f;
+
+    // score en el que la dificultad llega al tope; mas alla de este no sigue subiendo
+    [Tooltip("Score en el que la dificultad llega al máximo.")]
+    public float difficultyMaxScore = 500f;
+
+    // intervalo minimo al que llega el spawn cuando la dificultad esta al maximo
+    [Tooltip("Intervalo mínimo de spawn al llegar al máximo de dificultad.")]
+    public float minSpawnInterval = 0.6f;
+
+    // probabilidad maxima de obstaculo al llegar al maximo de dificultad
+    [Tooltip("Probabilidad máxima de obstáculo al llegar al máximo de dificultad.")]
+    [Range(0f, 1f)]
+    public float maxObstacleChance = 0.8f;
 
     private Camera _mainCamera;
 
@@ -51,6 +69,10 @@ public class PathGenerator : MonoBehaviour
     // WaitForSecondsRealtime funciona aunque el juego este pausado (timeScale = 0)
     private WaitForSecondsRealtime _spawnWait;
     private WaitForSecondsRealtime _cleanupWait;
+
+    // valores activos que cambian con la dificultad (los del Inspector son los valores base)
+    private float _currentInterval;
+    private float _currentObstacleChance;
 
     private void Awake()
     {
@@ -66,8 +88,12 @@ public class PathGenerator : MonoBehaviour
     {
         _mainCamera = Camera.main;
 
+        // arrancamos con los valores base del Inspector
+        _currentInterval = spawnInterval;
+        _currentObstacleChance = obstacleChance;
+
         // se inicializan en Start (no en Awake) para que ya tengan los valores del Inspector
-        _spawnWait = new WaitForSecondsRealtime(spawnInterval);
+        _spawnWait = new WaitForSecondsRealtime(_currentInterval);
         _cleanupWait = new WaitForSecondsRealtime(2f);
 
         // corrutinas: son como funciones que pueden "pausarse" con yield y continuar despues
@@ -85,6 +111,7 @@ public class PathGenerator : MonoBehaviour
             if (GameManager.Instance != null &&
                 GameManager.Instance.CurrentState == GameManager.GameState.Playing)
             {
+                UpdateDifficulty();
                 TrySpawnObstacle();
                 TrySpawnConsumible();
             }
@@ -92,6 +119,25 @@ public class PathGenerator : MonoBehaviour
             // yield return = "espera esto y luego sigue desde aqui la proxima iteracion"
             yield return _spawnWait;
         }
+    }
+
+    // ajusta el intervalo y la probabilidad segun el score actual
+    // InverseLerp devuelve un t de 0 a 1: 0 = dificultad base, 1 = dificultad maxima
+    // _spawnWait solo se recrea cuando el intervalo cambia, para no generar garbage cada ciclo
+    private void UpdateDifficulty()
+    {
+        if (ScoreManager.Instance == null) return;
+
+        float t = Mathf.InverseLerp(difficultyStartScore, difficultyMaxScore, ScoreManager.Instance.Score);
+
+        float newInterval = Mathf.Lerp(spawnInterval, minSpawnInterval, t);
+        if (!Mathf.Approximately(newInterval, _currentInterval))
+        {
+            _currentInterval = newInterval;
+            _spawnWait = new WaitForSecondsRealtime(_currentInterval);
+        }
+
+        _currentObstacleChance = Mathf.Lerp(obstacleChance, maxObstacleChance, t);
     }
 
     // calcula donde esta el borde derecho de la camara para spawnear justo afuera de la vista
@@ -109,7 +155,7 @@ public class PathGenerator : MonoBehaviour
         Debug.Log("TrySpawnObstacle llamado");
         if (obstaclePrefabs == null || obstaclePrefabs.Length == 0) return;
         // Random.value da un numero entre 0 y 1; si es mayor que la chance pues no spawnea nada
-        if (Random.value > obstacleChance) return;
+        if (Random.value > _currentObstacleChance) return;
 
         int index = Random.Range(0, obstaclePrefabs.Length);
         Vector3 spawnPos = new Vector3(GetSpawnX(), obstacleY, 0f);
