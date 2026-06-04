@@ -1,15 +1,20 @@
 using UnityEngine;
 
+// lleva la cuenta del score durante la partida y guarda el highscore entre sesiones
+// el score sube solo con el tiempo y tambien cuando pusheen se come un postre
 public class ScoreManager : MonoBehaviour
 {
+    // singleton para accederlo con ScoreManager.Instance desde cualquier script
     public static ScoreManager Instance { get; private set; }
 
+    // esta es la clave con la que se guarda el highscore en el dispositivo (PlayerPrefs)
+    // PlayerPrefs es como un mini diccionario que persiste aunque cierres el juego
     private const string HighscoreKey = "Highscore";
 
     public float Score { get; private set; }
     public int Highscore { get; private set; }
 
-    /// Inicializa el Singleton y carga el highscore almacenado en PlayerPrefs.
+    // inicializa el singleton y carga el highscore que se guardo la ultima vez que jugaron
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -18,19 +23,18 @@ public class ScoreManager : MonoBehaviour
             return;
         }
         Instance = this;
+        // GetInt busca el valor guardado con esa clave; si no existe devuelve el default (0)
         Highscore = PlayerPrefs.GetInt(HighscoreKey, 0);
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        Score = 0f;
+        Score = 0f; // empieza en cero cada partida
     }
 
-    // Update is called once per frame
     void Update()
     {
-        // El score solo aumenta mientras el juego esté en estado Playing
+        // solo sumamos score si el juego esta activo, no en menu ni en game over
         if (GameManager.Instance != null &&
             GameManager.Instance.CurrentState == GameManager.GameState.Playing)
         {
@@ -38,33 +42,33 @@ public class ScoreManager : MonoBehaviour
         }
     }
 
-    /// Aumenta el score basado en el tiempo real transcurrido.
-    /// Se llama desde Update únicamente cuando el juego está activo.
+    // suma puntos cada frame basado en cuanto tiempo paso (Time.deltaTime = segundos del frame)
+    // asi si el juego va a 60fps o 30fps el score sube igual de rapido, independiente del hardware
     private void IncreaseScoreOverTime()
     {
         Score += Time.deltaTime * 10f;
         TrySaveHighscore();
     }
 
-    // Suma puntos al score; llamado por Consumibles o Pusheen al recolectar un ítem
+    // suma puntos de golpe; lo llama Interactuables.cs cuando pusheen se come un postre
     public void AddPoints(float amount)
     {
         Score += amount;
         TrySaveHighscore();
     }
 
-    // Compara el score actual con el highscore y lo persiste si es mayor
+    // revisa si el score actual es el nuevo record y si es asi lo guarda en el dispositivo
     private void TrySaveHighscore()
     {
         if ((int)Score > Highscore)
         {
             Highscore = (int)Score;
-            PlayerPrefs.SetInt(HighscoreKey, Highscore);
-            PlayerPrefs.Save();
+            PlayerPrefs.SetInt(HighscoreKey, Highscore); // guarda en memoria
+            PlayerPrefs.Save(); // escribe en disco, por si el juego truena antes de cerrarse bien
         }
     }
 
-    // Reinicia el score a cero al comenzar una nueva partida
+    // resetea el score a cero; llamalo al iniciar una nueva partida
     public void ResetScore()
     {
         Score = 0f;

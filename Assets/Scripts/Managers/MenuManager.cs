@@ -1,13 +1,17 @@
 using UnityEngine;
 
+// maneja el panel del menu principal
+// puede ser que eventualmente lo unamos con UIManager pero por ahora lo dejamos separado pues
 public class MenuManager : MonoBehaviour
 {
+    // singleton para accederlo con MenuManager.Instance desde cualquier script
     public static MenuManager Instance { get; private set; }
 
+    // arrastra el panel del menu desde el inspector a este campo
     [Tooltip("Panel de UI que representa el menú principal.")]
     public GameObject panelMenu;
 
-    // Awake se llama antes que Start, ideal para inicializar el singleton
+    // Awake para inicializar el singleton antes de que otros scripts lo usen
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -16,17 +20,20 @@ public class MenuManager : MonoBehaviour
             return;
         }
         Instance = this;
+        // DontDestroyOnLoad hace que este objeto sobreviva si cargas otra escena
+        // util para managers que necesitan persistir entre escenas
         DontDestroyOnLoad(gameObject);
     }
 
-    // Muestra el menú y pausa el juego hasta que el jugador pulse Iniciar
+    // activa el panel y pausa el juego mientras el jugador decide si quiere jugar
     public void MostrarMenu()
     {
         panelMenu.SetActive(true);
         Time.timeScale = 0f;
     }
 
-    // Oculta el menú y le pide al GameManager que arranque la partida
+    // oculta el menu y le dice al GameManager que arranque la partida
+    // este metodo debe estar enlazado al boton "Iniciar" del canvas
     public void IniciarJuego()
     {
         panelMenu.SetActive(false);

@@ -64,9 +64,7 @@ public class Pusheen : MonoBehaviour
         }
     }
 
-    // Detecta triggers de ítems coleccionables y obstáculos
-    // Nota: los scripts Consumibles.cs y Obstaculos.cs también tienen OnTriggerEnter2D;
-    // usar solo uno de los dos lados para evitar doble llamada a AddPoints/TriggerGameOver
+    // Detecta triggers de ítems coleccionables y obstáculos -> Interactuables
     private void OnTriggerEnter2D(Collider2D other)
     {
         // Solo reaccionamos si quien colisiona es Pusheen
