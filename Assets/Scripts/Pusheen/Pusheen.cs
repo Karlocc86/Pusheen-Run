@@ -1,13 +1,14 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(SpriteRenderer))]
 public class Pusheen : MonoBehaviour
 {
     private InputSystem_Actions _inputActions;
     private Rigidbody2D _rb;
     private SpriteRenderer _spriteRenderer;
 
-    [SerializeField] private float _fuerzaSalto = 10f; // aumentado para mejor responsividad
+    [SerializeField] private float _fuerzaSalto = 20f; // 200% del valor original
     [SerializeField] private float _maxVelocidad = 15f; // limita velocidad de caida
     [SerializeField] private float _dragFactor = 0.5f; // hace la caida mas suave
 
